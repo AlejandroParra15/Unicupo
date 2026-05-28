@@ -8,9 +8,12 @@
     "scheme": "unicupo",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "co.unicupo.app"
     },
     "android": {
+      "package": "co.unicupo.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -39,6 +42,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b635386f-8ab5-46c7-bb84-f31e31ded9ed"
+      }
+    },
+    "owner": "alejandroparra"
   }
 }
