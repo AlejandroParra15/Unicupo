@@ -1,39 +1,82 @@
-# Welcome to your Expo app 👋
+# UniCupo 🚗
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Carpooling verificado para la comunidad universitaria.** UniCupo conecta a
+estudiantes y conductores de la misma universidad para compartir trayectos:
+publicar un viaje, buscar cupos disponibles, reservar en uno o dos toques y
+coordinar el encuentro por chat. El acceso se valida con el **correo
+institucional** (OTP), de modo que cada viaje se comparte solo entre personas
+del mismo ecosistema universitario.
 
-## Get started
+Proyecto del Equipo UniCupo (David A. Parra · Sebastian Bonilla · Andres Rojas)
+para el curso de Diseño Centrado en el Usuario — Universidad Javeriana, 2026.
 
-1. Install dependencies
+## Qué resuelve
 
-   ```bash
-   npm install
-   ```
+UniCupo se usa **en movimiento**: el pasajero camina hacia el punto de
+recogida, el conductor está al volante, hay sol fuerte que apaga la pantalla.
+El diseño parte de dos compromisos:
 
-2. Start the app
+- **Accesibilidad cognitiva primero.** La usuaria de referencia, *Valentina*
+  (TDAH y discalculia leve), abandona apps cuando la pantalla la satura o le
+  exige calcular horarios. UniCupo responde con lenguaje relativo ("sale en 5
+  min" en vez de "06:42"), indicadores tipo semáforo (color + ícono, nunca
+  solo texto), rutas frecuentes en el Home y reservas en máximo dos toques.
+  *Lo que sirve a Valentina, sirve a todos.*
+- **El tacto como segundo canal.** Cuando los ojos están en la calle o en la
+  vía, la información crítica se traslada del canal visual al **háptico** (ver
+  abajo). Es la capa de accesibilidad que funciona sin ver, sin oír y sin leer.
 
-   ```bash
-   npx expo start
-   ```
+Estos principios fueron validados en tres ciclos de encuestas con la comunidad
+universitaria y con personas con TDAH (90% abandona apps por sobrecarga de
+información; 80% prefiere un semáforo visual a la hora exacta).
 
-In the output, you'll find options to open the app in a
+## Estructura
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+App **Expo Router** (file-based routing) en `src/app`. Las pantallas clave:
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Acceso:** `onboarding`, `login`, `otp` (verificación por correo
+  institucional), `profile-setup`.
+- **Tabs principales** (`(tabs)/`): `index` (Home con rutas frecuentes),
+  `buscar`, `trips` (Mis Viajes), `profile`.
+- **Flujo de viaje** (`trip/`): `confirm`, `success`, `active` (Viaje en Curso,
+  con botón SOS), `chat` (mensajes predefinidos + roles diferenciados), `rate`.
+- **Conductor:** `conductor`, `publish-trip`, `register-vehicle`.
+- **Soporte:** `report` / `report-success` (con número de caso),
+  `notifications`, `settings`, `history`.
 
-## Háptico
+Otras carpetas: `src/components` (UI reutilizable), `src/services`
+(`haptics.ts`), `src/store` (`app-context.tsx`), `src/data` (mocks),
+`src/constants` (tema).
 
-UniCupo usa retroalimentación háptica como segundo canal de comunicación
-(útil cuando el usuario va caminando, manejando, o tiene TDAH y necesita
-un anclaje físico al evento). El "vocabulario táctil" son **5 patrones**
-centralizados en `src/services/haptics.ts` — nunca llames a
-`expo-haptics` directamente desde una pantalla.
+## Empezar
 
-### El vocabulario
+```bash
+npm install
+npx expo start
+```
+
+Desde ahí puedes abrir la app en un [development build](https://docs.expo.dev/develop/development-builds/introduction/),
+en el [emulador de Android](https://docs.expo.dev/workflow/android-studio-emulator/),
+en el [simulador de iOS](https://docs.expo.dev/workflow/ios-simulator/) o en
+[Expo Go](https://expo.dev/go). Para sentir los hápticos necesitas un
+**dispositivo físico** (ver más abajo).
+
+---
+
+# Interfaces hápticas
+
+UniCupo usa retroalimentación háptica como **segundo canal de comunicación**:
+útil cuando el usuario va caminando, manejando, o tiene TDAH y necesita un
+anclaje físico al evento. La idea no es decorar con vibraciones, sino mover
+información del ojo al tacto en los momentos donde mirar la pantalla es difícil,
+peligroso o imposible.
+
+El "vocabulario táctil" son **5 patrones** centralizados en
+`src/services/haptics.ts` — nunca llames a `expo-haptics` directamente desde
+una pantalla. Que el vocabulario sea finito es lo que permite que el usuario
+aprenda a reconocer cada vibración sin pensar.
+
+## El vocabulario
 
 | Patrón                  | Sensación                       | Cuándo se dispara                                                                                                                                                                                                                                                                              |
 | ----------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -43,7 +86,14 @@ centralizados en `src/services/haptics.ts` — nunca llames a
 | `attentionAlert()`      | Tres pulsos fuertes             | Tap en notificación "Viaje cancelado" en `/notifications`, confirmación de cancelación de reserva en `/(tabs)/trips`                                                                                                                                                                          |
 | `startSos(onComplete)`  | Crescendo sostenido (3s)        | Botón SOS rojo en `/trip/active` — `onPressIn` arranca, `onPressOut` cancela si soltó antes de los 3s. Si se completan los 3s dispara un `successPulse` final como confirmación de envío.                                                                                                     |
 
-### Preferencias y accesibilidad
+Cada patrón mapea a un evento de la app pensado para un contexto concreto: el
+pulso largo cierra una acción sin que el pasajero tenga que leer; el doble pulso
+suave le avisa al conductor (en el bolsillo, manejando) que alguien se sumó al
+viaje; los tres pulsos fuertes son imposibles de ignorar incluso con ruido
+ambiental; el crescendo del SOS confirma táctilmente la activación y deja
+margen para cancelar si fue accidental.
+
+## Preferencias y accesibilidad
 
 - **Toggle de usuario**: Configuración → "Vibración háptica". El valor
   se persiste en AsyncStorage bajo la clave `haptics_enabled` (default
@@ -55,7 +105,7 @@ centralizados en `src/services/haptics.ts` — nunca llames a
   (`attentionAlert`, `startSos`, `successPulse`) siguen activos pero
   con intensidad reducida.
 
-### Cómo probarlo
+## Cómo probarlo
 
 > El **simulador de iOS no vibra** — la háptica solo se siente en un
 > dispositivo físico. En Android Studio emulator tampoco. Usa tu
@@ -74,7 +124,7 @@ centralizados en `src/services/haptics.ts` — nunca llames a
 | Suelta antes de los 3s                                                 | cancela sin alerta  |
 | Apaga "Vibración háptica" en Configuración y repite cualquier acción   | nada                |
 
-### Implementación técnica
+## Implementación técnica
 
 - `expo-haptics ~56.0.3`. El permiso `VIBRATE` de Android lo agrega
   automáticamente el plugin — no hay nada que tocar en
@@ -89,7 +139,7 @@ centralizados en `src/services/haptics.ts` — nunca llames a
   llamar en `onPressOut`. Internamente usa un único `setInterval` que
   se limpia siempre — el thread JS no se bloquea.
 
-### NO hacer
+## NO hacer
 
 - No agregar hápticos a taps menores (navegación, scroll, switch de
   tab, abrir un input). Solo a los momentos listados arriba.
@@ -98,32 +148,10 @@ centralizados en `src/services/haptics.ts` — nunca llames a
 - No usar la `Vibration` API de RN directamente; todo pasa por
   `src/services/haptics.ts`.
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## Recursos
 
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- [Documentación de Expo (SDK 56)](https://docs.expo.dev/versions/v56.0.0/)
+- [Expo Router](https://docs.expo.dev/router/introduction)
+- [expo-haptics](https://docs.expo.dev/versions/v56.0.0/sdk/haptics/)
